@@ -14,3 +14,17 @@ The pipeline that ingests a resume — from file upload through parsing and into
 **Setup confirmation:** [x] App runs locally at localhost:5173
 
 **Cohort ledger:** [x] Issue added to cohort ledger
+
+## Week 8 — Reproduction & solution planning
+
+**Reproduction commit link:** https://github.com/Sniggy26/pathreview/commit/c9cc479
+
+**Reproduction summary:**
+Confirmed via a direct Python script that `IngestionPipeline.ingest_resume()` already works end-to-end (parse → chunk → embed → store) when called directly, producing 1 chunk and storing it in a real ChromaDB collection. Also discovered the pipeline is never actually called from the API's resume upload endpoint, and that its dedupe-check and DB-recording methods are unfinished placeholders.
+
+**PLAN.md link:** https://github.com/Sniggy26/pathreview/blob/test/18-e2e-ingestion-pipeline/PLAN.md
+
+**Walkthrough video (recommended):** [not recorded this week]
+
+**Blockers or open questions:**
+Need to decide whether to build a proper test DB session fixture or use a lightweight fake for the `db_session` argument, since no Postgres-backed test fixture currently exists in `tests/conftest.py`. Also unsure whether the skip/dedupe test should assert current (buggy) behavior or flag it as a known gap without asserting on it.
