@@ -47,3 +47,34 @@ Added `tests/integration/test_ingestion_pipeline.py` with 3 tests: `test_ingest_
 (Both pass in the sense defined by the assignment: no new failures introduced. `make test-unit` shows the same pre-existing 53 failures/375 passing before and after this PR. `make check`'s mypy step cannot complete on any file in the repo, including files untouched by this PR, due to a pre-existing `python_version`/numpy stub mismatch — documented in the PR and commit message. `ruff` and `black` both pass cleanly on my new file.)
 
 **Draft PR feedback received from:** none
+
+## Week 10 — Iteration & reflection
+
+### Reviewer feedback
+
+**Feedback received:** [ ] Yes  [x] No — still awaiting review
+
+**Summary of feedback:**
+No reviewer feedback has come in yet on PR #588 as of this writing. Per the assignment note, reviewer feedback isn't a live feature for Summer 2026, so this is expected rather than a gap on my end.
+
+**How you responded:**
+N/A — nothing to respond to yet. If feedback comes in after submission, I'll follow up in the PR thread and note the exchange here if I'm able to edit this file further.
+
+---
+
+### Reflection
+
+**What was harder than you expected?**
+Getting the local environment running was far harder than actually writing the test. I hit a real version conflict where the pinned `chromadb:0.4.22` Docker image auto-installed a newer numpy at container startup, but Chroma's own code still used the removed `np.float_` attribute, crashing the vector-db container outright. I had to override the container's entrypoint command to force-install `numpy<2.0.0` before the server started. I also didn't have Homebrew, Node, or Docker installed at the start of this module, so a huge chunk of my actual time went into infrastructure, not code — something I hadn't budgeted for when I first read the assignment.
+
+**What did you learn about working in a large codebase?**
+The biggest lesson was that my assumptions about how components interact were often wrong, and the only way to know was to run the code. For example, I assumed `IngestionPipeline.ingest_resume()` was wired up to the actual resume upload endpoint in `api/routes/profiles.py` — it isn't; that route parses resumes independently via raw `PyPDF2` and never calls the pipeline at all. I only found that by grepping the whole repo for `IngestionPipeline` usage. I also learned that "it has unit tests" doesn't mean the pieces work together — my e2e test surfaced a real crash (empty `detected_sections` list breaking ChromaDB's metadata validation) that no individual parser test caught, because it only showed up when parsing output flowed into the embedding/storage step.
+
+**How did AI tools help — and where did they fall short?**
+Claude was most useful for fast code navigation — pointing me at suspicious lines (like the `_check_skip()` placeholder query) and helping me write reproduction scripts quickly so I could verify behavior instead of guessing. But it also got things wrong at first: when I was investigating the "duplicate search results" bug earlier in the project, Claude's first hypothesis (that a SQL join was fanning out per tag) turned out to be false once I actually ran the query and checked `len(results)` myself. That was a useful reminder that AI-generated hypotheses need verification against real output, not just plausible-sounding reasoning — which is exactly the discipline this module was trying to teach in the first place.
+
+**What would you do differently if you started over?**
+I'd read more of the surrounding pipeline code (`batch_processor.py`, `provider.py`) before writing my first reproduction script, rather than writing the script first and discovering the actual API shapes as I went. I'd also set up Docker, Homebrew, and Node right at the start of Module 3 instead of only installing them when `make setup` failed, since that environment work ended up eating time I'd rather have spent on the actual test logic.
+
+**What are you most proud of from this module?**
+Finding and clearly documenting two real, previously-unknown bugs (the indented-text section-detection crash, and the broken `_check_skip` dedupe logic) instead of just writing a test that technically passed. It would have been easy to write a shallow happy-path test and call it done; instead the test genuinely proved something true and useful about the codebase, which is what an integration test is supposed to do.
